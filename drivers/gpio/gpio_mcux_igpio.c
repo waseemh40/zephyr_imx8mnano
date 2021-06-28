@@ -52,6 +52,21 @@ static int mcux_igpio_configure(const struct device *dev,
 
 	if (flags & GPIO_OUTPUT_INIT_LOW) {
 		GPIO_WritePinOutput(base, pin, 0);
+#if (defined(FSL_FEATURE_IGPIO_HAS_DR_CLEAR) && FSL_FEATURE_IGPIO_HAS_DR_CLEAR)
+        base->DR_SET = BIT(pin);
+#else
+        base->DR |= BIT(pin); /* Set pin output to low level.*/
+#endif
+//		base->DR_SET = BIT(pin);
+	}
+
+	if (flags & GPIO_OUTPUT_INIT_LOW) {
+#if (defined(FSL_FEATURE_IGPIO_HAS_DR_CLEAR) && FSL_FEATURE_IGPIO_HAS_DR_CLEAR)
+        base->DR_CLEAR = BIT(pin);
+#else
+        base->DR &= ~BIT(pin); /* Clear pin output to low level.*/
+#endif	
+//		base->DR_CLEAR = BIT(pin);
 	}
 
 	WRITE_BIT(base->GDIR, pin, flags & GPIO_OUTPUT);
@@ -88,6 +103,12 @@ static int mcux_igpio_port_set_bits_raw(const struct device *dev,
 	GPIO_Type *base = config->base;
 
 	GPIO_PortSet(base, mask);
+#if (defined(FSL_FEATURE_IGPIO_HAS_DR_CLEAR) && FSL_FEATURE_IGPIO_HAS_DR_CLEAR)
+        base->DR_SET = mask;
+#else
+        base->DR |= mask; /* Set mask*/
+#endif
+//	base->DR_SET = mask;
 
 	return 0;
 }
@@ -99,6 +120,12 @@ static int mcux_igpio_port_clear_bits_raw(const struct device *dev,
 	GPIO_Type *base = config->base;
 
 	GPIO_PortClear(base, mask);
+#if (defined(FSL_FEATURE_IGPIO_HAS_DR_CLEAR) && FSL_FEATURE_IGPIO_HAS_DR_CLEAR)
+        base->DR_CLEAR = mask;
+#else
+        base->DR &= ~mask; /* Clear mask*/
+#endif	
+//	base->DR_CLEAR = mask;
 
 	return 0;
 }
@@ -110,6 +137,12 @@ static int mcux_igpio_port_toggle_bits(const struct device *dev,
 	GPIO_Type *base = config->base;
 
 	GPIO_PortToggle(base, mask);
+#if (defined(FSL_FEATURE_IGPIO_HAS_DR_CLEAR) && FSL_FEATURE_IGPIO_HAS_DR_CLEAR)
+		base->DR_TOGGLE = mask;
+#else
+		base->DR ^= (1<< mask);
+#endif
+	
 
 	return 0;
 }
@@ -244,3 +277,4 @@ static const struct gpio_driver_api mcux_igpio_driver_api = {
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_IGPIO_INIT)
+
